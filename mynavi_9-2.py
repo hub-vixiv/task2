@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import datetime as dt
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
+import re
 
 pd.set_option('display.unicode.east_asian_width', True)
 
@@ -51,8 +52,8 @@ def page_process(page_html):
     parse_html = BeautifulSoup(page_html, 'html.parser')
 
     ### 会社名を取得　→　co_name-list
-    #　h3 をリストに
-    h3_lists = parse_html.find_all('h3', class_='cassetteRecruit__name')
+    #　h3 クラス名が「cassetteRecruit」で始まる　をリストに
+    h3_lists = parse_html.find_all('h3', class_=re.compile('^cassetteRecruit'))
     #　h3 テキストをリストに
     h3_text_lists=[ list.string for list in h3_lists ]  
     #　テキストから会社名だけ抜いて　リストに
@@ -60,8 +61,8 @@ def page_process(page_html):
     print(str(len(co_name_list)))
 
     ### 情報更新日を取得　→　update_list
-    #　情報更新日の<p>を取得
-    update_p_lists = parse_html.find_all('p', class_='cassetteRecruit__updateDate')
+    #　情報更新日の<p>を取得　クラス名が「updateDate」で終わる
+    update_p_lists = parse_html.find_all('p', class_=re.compile('updateDate$'))
     #　<p>の中の<span>の文字列を抜き出す
     update_list=[list.select('span')[0].string for list in update_p_lists]
     print(str(len(update_list)))
@@ -94,6 +95,7 @@ def main():
     i =  0  #ページ数カウンター
     log_list= [(f"{dt.datetime.now()}：作業開始")]   #リストに作業進捗を記録
     
+
     # driverを起動
     if os.name == 'nt': #Windows
         driver = webdriver.Chrome(ChromeDriverManager().install())
