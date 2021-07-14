@@ -57,14 +57,12 @@ def page_process(page_html):
     h3_text_lists=[ list.string for list in h3_lists ]  
     #　テキストから会社名だけ抜いて　リストに
     co_name_list = [list.split(' |')[0] for list in h3_text_lists]
-    print(str(len(co_name_list)))
 
     ### 情報更新日を取得　→　update_list
     #　情報更新日の<p>を取得
     update_p_lists = parse_html.find_all('p', class_='cassetteRecruit__updateDate')
     #　<p>の中の<span>の文字列を抜き出す
     update_list=[list.select('span')[0].string for list in update_p_lists]
-    print(str(len(update_list)))
 
     #　給与の情報を取得　→　salary_list
     #　tableタグを取得
@@ -73,7 +71,7 @@ def page_process(page_html):
     df = pd.read_html(str(tables), header=None, index_col=0)
     #　indexが給与の値を取得
     salary_list = [ table.loc["給与",1] for table in df ]
-    print(str(len(salary_list)))
+
     ###listからDataFrameへ
     df2 = pd.DataFrame({'会社名':co_name_list, '給与':salary_list, '情報更新日':update_list})
 
@@ -94,14 +92,15 @@ def main():
     i =  0  #ページ数カウンター
     log_list= [(f"{dt.datetime.now()}：作業開始")]   #リストに作業進捗を記録
     
+    driver = webdriver.Chrome(ChromeDriverManager().install())
+
     # driverを起動
     if os.name == 'nt': #Windows
-        driver = webdriver.Chrome(ChromeDriverManager().install())
         driver = set_driver("chromedriver.exe", False)
     elif os.name == 'posix': #Mac
         driver = set_driver("chromedriver", False)
     # Webサイトを開く
-    driver.get(f"{url}/list/kw{search_keyword}/?jobsearchType=14&searchType=18")
+    driver.get(url+"/list/kw"+search_keyword+"/?jobsearchType=14&searchType=18")
     time.sleep(5)
     # ポップアップを閉じる
     driver.execute_script('document.querySelector(".karte-close").click()')
@@ -150,7 +149,7 @@ def main():
 
         df_list= df_list.reset_index(drop=True)
         df_list.index = df_list.index + 1
-        df_list.to_csv('test.csv', encoding='utf-8_sig') #utf-8-sig
+        df_list.to_csv('test.csv', encoding='shift jis')
         data_count = str(len(df_list))
 
     except Exception as e:
@@ -159,7 +158,7 @@ def main():
         print("エラー内容：" , e)
 
     #ログファイルの出力
-    log_list.insert(0,"★★検索キーワード：" + search_keyword + "　　検索結果：" + data_count +" 件\n")   #検索キーワードを記録
+    log_list.insert(0,"★★検索キーワード：" + search_keyword +"　　検索結果："+ data_count+ "件\n")   #検索キーワードを記録
 
     now_time = dt.datetime.now()
     with open(f"{now_time:%Y%m%d-%H%M%S}.txt", mode='w', encoding='utf-8') as f:
